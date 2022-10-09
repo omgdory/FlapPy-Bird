@@ -4,4 +4,4 @@ My first beginner project! Created using Python and the official [PyGame](https:
 
 At the moment, no executable file exists for the program-- coming soon!
 
-This repository displays all related files and sources for this project. Dependencies are not listed.
+This repository will display all related files and sources for this project. Dependencies are not listed.
