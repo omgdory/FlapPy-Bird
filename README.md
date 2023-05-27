@@ -1,6 +1,6 @@
 FlapPy-Bird
 ===========
-My first beginner project! Created using Python and the official [PyGame](https://github.com/pygame/pygame) library.
+My first beginner project! A simple clone of Flappy Bird. Created using Python and the official [PyGame](https://github.com/pygame/pygame) library.
 
 At the moment, no executable file exists for the program.
 
