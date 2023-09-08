@@ -1,6 +1,7 @@
 # October 7, 2022
 # first attempt at making flappy bird.
 # not using any OOP at all except those imported.
+# THIS FILE IS NOT THE FINAL FILE; SEE "flap2.py"
 
 import pygame, random, time, os, json
 
