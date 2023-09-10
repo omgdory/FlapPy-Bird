@@ -4,4 +4,5 @@ My first beginner project! A simple clone of Flappy Bird. Created using Python a
 
 This repository displays all related files and sources for this project. Dependencies are not listed.
 
-Testing...
+## CLEANUP 2023
+Cleaning up my code from this project, so that it is more reflective of my current coding practices
