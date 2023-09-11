@@ -14,13 +14,17 @@ SCREEN_HEIGHT = 800
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Setting up the caption (random, for the lols)
-screenCaptions = ["Class Flap", "Flabby Birb", "Also Try Minecraft", "Also Try Terraria"]
+screenCaptions = ["FlapPy Bird", "Flabby Birb", "Also Try Minecraft", "Also Try Terraria"]
 randomCaptionIndex = random.randint(0, (len(screenCaptions)-1))
 pygame.display.set_caption(screenCaptions[randomCaptionIndex])
 
 # Setting up the clock
 FPS = 60
 clock = pygame.time.Clock()
+
+# Reference Images
+PIPE_IMG = r"SamplePics\pipe.png"
+PLAYER_IMG = r"SamplePics\babyyoda.jpg"
 
 # Presentational variables (non-pygame)
 font = pygame.font.SysFont(None, 72)
@@ -31,8 +35,8 @@ darkGreen = (0,153,0)
 # Unpack save data
 # Read the file and parse the data into "playerData" variable
 with open('flap.json', 'r') as file:
-    encodedPlayerData = file.read()
-    playerData = json.loads(encodedPlayerData)
+    readPlayerData = file.read()
+    playerData = json.loads(readPlayerData)
     file.close()
 # Parse the player data
 highScore = playerData['highScore']
@@ -40,53 +44,64 @@ highScore = playerData['highScore']
 # Player class
 class Player():
     velocity = 7
-    acceleration = .5
+    acceleration = 0.5
 
-    def __init__(self, x, y, width, height, src): # void
+    def __init__(self, x: int, y: int, width: int, height: int, src: str) -> None: # void
         image = pygame.image.load(src)
         self.image = pygame.transform.scale(image, (width, height))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
     
-    def update(self):
+    def Update(self) -> None:
         Player.velocity -= Player.acceleration
         self.rect.y -= Player.velocity
 
 # Pipe class for pipe object
 class Pipe():
-    velocity = 5
+    VELOCITY = 5
+    GAP_SIZE = 1170
+    SEPARATION = 650
 
-    def __init__(self, x, y, src): # void
+    def __init__(self, x: int, y: int, src: str):
         # initialize the bottom pipe
+        # initialize the top pipe relative to the bottom pipe
         self.botImage = pygame.image.load(src)
+        
+        self.topImage = pygame.transform.flip(self.botImage, False, True)
+
         self.botRect = self.botImage.get_rect()
+        self.topRect = self.topImage.get_rect()
+
         self.botRect.x = x
         self.botRect.y = y
-        # initialize the top pipe
-        self.topImage = pygame.transform.flip(self.botImage, False, True)
-        self.topRect = self.topImage.get_rect()
         self.topRect.x = self.botRect.x
-        self.topRect.y = self.botRect.y-1170
+        self.topRect.y = self.botRect.y-self.GAP_SIZE
 
     # To update after each game loop
-    def update(self):
-        if self.topRect.x <= -650:
+    def Update(self):
+        if self.endReached():
             # reset the pipe
             self.botRect.x = SCREEN_WIDTH
-            self.botRect.y = random.randint(350, 700)
+            self.botRect.y = random.randint(SCREEN_HEIGHT//3, SCREEN_HEIGHT*0.8)
             # reset the top pipe, too
             self.topRect.x = self.botRect.x
-            self.topRect.y = self.botRect.y-1170
+            self.topRect.y = self.botRect.y-self.GAP_SIZE
         else:
-            self.topRect.x -= Pipe.velocity
-            self.botRect.x -= Pipe.velocity
+            self.topRect.x -= Pipe.VELOCITY
+            self.botRect.x -= Pipe.VELOCITY
             screen.blit(self.botImage, self.botRect)
             screen.blit(self.topImage, self.topRect)
+    
+    def endReached(self) -> bool:
+        if self.topRect.x <= -self.SEPARATION:
+            return True
+        return False
+
 
 # Button/GUI class
 class Element():
-    def __init__(self, x, y, width, height):
+    def __init__(self, x: int, y: int, width: int, height: int) -> None:
         self.width = width
         self.height = height
         self.rect = pygame.Rect(x, y, width, height)
@@ -95,10 +110,10 @@ class Element():
 
     # Method to draw button to the screen with given text
     # Automatically centers the text
-    def draw(self, text):
+    def Draw(self, text: str) -> None:
         pygame.draw.rect(screen, skyBlue, self.rect)
         renderedText = font.render(text, True, black)
-        screen.blit(renderedText, (self.x+self.width//6, self.y+self.height//6))
+        screen.blit(renderedText, (self.x+(self.width//6), self.y+(self.height//6)))
 
 # Game class
 class Flap():
@@ -115,10 +130,12 @@ class Flap():
 
         # Surface variables
         bg = pygame.image.load(r"SamplePics\starwarsbg.jpg")
-        pipe1 = Pipe(SCREEN_WIDTH-650, random.randint(350, 700), r"SamplePics\pipe.png")
-        pipe2 = Pipe(SCREEN_WIDTH, random.randint(350, 700), r"SamplePics\pipe.png")
-        pipe3 = Pipe(SCREEN_WIDTH+650, random.randint(350, 700), r"SamplePics\pipe.png")
-        player = Player(215, SCREEN_HEIGHT//2, 100, 100, r"SamplePics\babyyoda.jpg")
+        pipes = []
+        sep = Pipe.SEPARATION
+        for _ in range(3):
+            pipes.append(Pipe(SCREEN_WIDTH-sep, random.randint(SCREEN_HEIGHT//3, SCREEN_HEIGHT*0.8), PIPE_IMG))
+            sep -= Pipe.SEPARATION
+        player = Player(SCREEN_WIDTH//7, SCREEN_HEIGHT//2, 100, 100, PLAYER_IMG)
 
         # Game elements
         PlayButton = Element(SCREEN_WIDTH//2-80, SCREEN_HEIGHT//2, 160, 80)
@@ -137,12 +154,12 @@ class Flap():
             screen.blit(player.image, player.rect)
 
             if gameOver:
-                GameOverElement.draw("Game Over")
+                GameOverElement.Draw("Game Over")
                 # halt 
                 Player.acceleration = 0
                 Player.velocity = 0
                 Pipe.velocity = 0
-                PlayButton.draw("Play")
+                PlayButton.Draw("Play")
                 # game-over event handler
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -155,29 +172,20 @@ class Flap():
                         pos = pygame.mouse.get_pos()
                         if PlayButton.rect.collidepoint(pos):
                             # Reset player position
-                            player.rect.x = 215
+                            player.rect.x = SCREEN_WIDTH//7
                             player.rect.y = SCREEN_HEIGHT//2
-
-                            # (REVISE IF AND WHEN POSSIBLE)
-                            # Reset pipe 1 position 
-                            pipe1.botRect.x, pipe1.topRect.x = SCREEN_WIDTH-650, SCREEN_WIDTH-650
-                            pipe1.botRect.y = random.randint(350, 700)
-                            pipe1.topRect.y = pipe1.botRect.y-1170
-                            # Reset pipe 2 position
-                            pipe2.botRect.x, pipe2.topRect.x = SCREEN_WIDTH, SCREEN_WIDTH
-                            pipe2.botRect.y = random.randint(350, 700)
-                            pipe2.topRect.y = pipe2.botRect.y-1170
-                            # Reset pipe 3 position
-                            pipe3.botRect.x, pipe3.topRect.x = SCREEN_WIDTH+650, SCREEN_WIDTH+650
-                            pipe3.botRect.y = random.randint(350, 700)
-                            pipe3.topRect.y = pipe3.botRect.y-1170
-                            # Reinstantiate player (just to be safe)
-                            player = Player(215, SCREEN_HEIGHT//2, 100, 100, r"SamplePics\babyyoda.jpg")
-                            score = 0
-                            # Reset variables
-                            Player.acceleration = .5
                             Player.velocity = 7
+                            Player.acceleration = 0.5
+
+                            sep = Pipe.SEPARATION
+                            for obj in pipes:
+                                obj.botRect.x, obj.topRect.x = SCREEN_WIDTH-sep, SCREEN_WIDTH-sep
+                                obj.botRect.y = random.randint(SCREEN_HEIGHT//3, SCREEN_HEIGHT*0.8)
+                                obj.topRect.y = obj.botRect.y-Pipe.GAP_SIZE
+                                sep -= Pipe.SEPARATION
                             Pipe.velocity = 5
+                            
+                            score = 0
                             gameOver = False
             else: # For in-game (not game over)
                 # in-game event handler
@@ -189,37 +197,27 @@ class Flap():
                         Player.velocity = 12.5
 
                 # Update game objects
-                player.update()
-                pipe1.update()
-                pipe2.update()
-                pipe3.update()
+                player.Update()
+                for obj in pipes:
+                    obj.Update()
 
                 # If player leaves the screen
-                if player.rect.y < 0 or player.rect.y > 800:
+                if player.rect.y < 0 or player.rect.y > SCREEN_HEIGHT:
                     gameOver = True
 
-                # Checking pipe collisions (REVISE IF AND WHEN POSSIBLE)
-                if player.rect.colliderect(pipe1.botRect) or player.rect.colliderect(pipe1.topRect):
-                    gameOver = True
-                if player.rect.colliderect(pipe2.botRect) or player.rect.colliderect(pipe2.topRect):
-                    gameOver = True
-                if player.rect.colliderect(pipe3.botRect) or player.rect.colliderect(pipe3.topRect):
-                    gameOver = True
-                
-                # Check the score as necessary
-                if player.rect.x == pipe1.botRect.x + 100:
-                    score += 1
-                elif player.rect.x == pipe2.botRect.x + 100:
-                    score += 1
-                elif player.rect.x == pipe3.botRect.x + 100:
-                    score += 1
+                # Checking pipe collisions
+                for obj in pipes:
+                    if player.rect.colliderect(obj.botRect) or player.rect.colliderect(obj.topRect):
+                        gameOver = True
+                    elif player.rect.x == obj.botRect.x + (obj.botRect.width):
+                        score += 1
 
                 # Updating score as necessary
                 if score > highScore:
                     highScore = score
 
-            ScoreElement.draw(f"Score: {score}")
-            HighScoreElement.draw(f"Highscore: {highScore}")
+            ScoreElement.Draw(f"Score: {score}")
+            HighScoreElement.Draw(f"Highscore: {highScore}")
 
             # Updating clock and display
             pygame.display.update()
